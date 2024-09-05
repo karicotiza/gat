@@ -1,9 +1,9 @@
-name: Type check
+name: Tests
 
 on: push
 
 jobs:
-  code_style:
+  tests:
     runs-on: ubuntu-22.04
 
     steps:
