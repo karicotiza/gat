@@ -11,7 +11,7 @@ from pydantic import BaseModel
 class Settings:
     """App settings."""
 
-    request_min_length: int = 1
+    request_min_length: str = 1
     request_max_length: int = 2147483647
     response_min_length: int = 1
     response_max_length: int = 512
