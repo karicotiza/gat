@@ -6,7 +6,6 @@ from typing import Annotated
 from annotated_types import MaxLen, MinLen
 from fastapi import FastAPI
 from pydantic import BaseModel
-from pysbd import Segmenter  # type: ignore
 from uvicorn import run
 
 
@@ -49,4 +48,4 @@ async def text_split(request: Request) -> Response:
     return request.split_sentences()
 
 if __name__ == '__main__':
-    run('main:app')
+    run('main:app', host='0.0.0.0', port=8000)
