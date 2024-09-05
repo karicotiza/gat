@@ -1,0 +1,26 @@
+name: Type check
+
+on: push
+
+jobs:
+  code_style:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Copy code
+      uses: actions/checkout@v4
+
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: python -m pip install -r requirements.txt
+    
+    - name: Check code types
+      run: |
+        python -m pip install pytest==8.3.2
+        python -m pip install schemathesis==3.35.2
+        python -m pytest .
+
