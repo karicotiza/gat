@@ -3,7 +3,7 @@ name: Tests
 on: push
 
 jobs:
-  tests:
+  pytest:
     runs-on: ubuntu-22.04
 
     steps:

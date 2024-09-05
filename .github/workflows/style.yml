@@ -3,7 +3,7 @@ name: Style
 on: push
 
 jobs:
-  style:
+  wemake-python-styleguide:
     runs-on: ubuntu-22.04
 
     steps:

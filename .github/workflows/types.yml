@@ -3,7 +3,7 @@ name: Types
 on: push
 
 jobs:
-  types:
+  mypy:
     runs-on: ubuntu-22.04
 
     steps:
