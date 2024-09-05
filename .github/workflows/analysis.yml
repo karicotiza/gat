@@ -1,4 +1,4 @@
-name: Code style
+name: Code analysis
 
 on: push
 
@@ -18,5 +18,9 @@ jobs:
     - name: Install dependencies
       run: python -m pip install -r requirements.txt
     
-    - name: Code style check
+    - name: PythonStyleGuide
       uses: wemake-services/wemake-python-styleguide@0.19.2
+
+    - name: MyPy
+      uses: sasanquaneuf/mypy-github-action@releases/v1.3
+
