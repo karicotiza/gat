@@ -12,4 +12,9 @@ schema: schemas.BaseOpenAPISchema = loaders.from_asgi('/openapi.json', app)
 
 @schema.parametrize()
 def test_schemathesis(case: models.Case):
+    """Schemathesis tests.
+
+    Args:
+        case (models.Case): Schemathesis injection.
+    """
     case.call_and_validate()

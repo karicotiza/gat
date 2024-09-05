@@ -7,4 +7,4 @@ RUN python -m pip install uvicorn==0.30.6
 
 COPY main.py main.py
 
-ENTRYPOINT [ "python", "main.py" ]
+ENTRYPOINT [ "uvicorn", "main:app", "--host", "0.0.0.0" ]
