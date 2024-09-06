@@ -1,2 +1,2 @@
-# gat
+# GAT
 GitHub Actions test
