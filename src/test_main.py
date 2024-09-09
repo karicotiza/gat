@@ -15,7 +15,7 @@ schema: schemas.BaseOpenAPISchema = loaders.from_asgi('/openapi.json', app)
 
 
 @schema.parametrize()
-def test_schemathesis(case: models.Case) -> None:
+async def test_schemathesis(case: models.Case) -> None:
     """Schemathesis tests.
 
     Args:
