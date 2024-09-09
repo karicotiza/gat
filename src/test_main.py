@@ -6,7 +6,7 @@ from schemathesis import experimental, models
 from schemathesis.specs.openapi import loaders, schemas
 
 from main import Response as APIResponse
-from main import app
+from main import app, Settings
 
 experimental.OPEN_API_3_1.enable()
 
@@ -39,9 +39,7 @@ def _check(before: str, after: str | None = None) -> None:
 
 def test_very_long_text() -> None:
     """Test very long text."""
-    power: int = 16
-    text_length: int = 2 ** power - 1
-    very_long_text: str = 'a' * text_length
+    very_long_text: str = 'a' * (Settings.request_max_length - 1)
     _check(very_long_text)
 
 

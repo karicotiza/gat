@@ -13,7 +13,7 @@ class Settings:
     """App settings."""
 
     request_min_length: int = 1
-    request_max_length: int = 2147483647
+    request_max_length: int = 4194304
     response_min_length: int = 1
     response_max_length: int = 256
 
