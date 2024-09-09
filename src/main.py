@@ -1,5 +1,6 @@
 """Microservice for dividing text into sentences."""
 
+from dataclasses import dataclass
 from typing import Annotated, Generator
 
 from annotated_types import Ge, Le, MaxLen, MinLen
@@ -32,6 +33,23 @@ class Sentence(BaseModel):
         Ge(Settings.response_min_length),
         Le(Settings.response_max_length),
     ]
+
+
+@dataclass(slots=True)
+class SplitterMemory:
+    """Splitter memory structure."""
+
+    cursor: int
+
+    terminal_at: int | None = None
+    internal_at: int | None = None
+    space_at: int | None = None
+
+    is_terminal: bool = False
+    is_internal: bool = False
+    is_space: bool = False
+
+    character: str = ''
 
 
 class TextSplitter:
@@ -68,34 +86,46 @@ class TextSplitter:
             yield sentence.text
 
     def _extract_sentence(self, text: str) -> Sentence:
-        cursor: int = len(text) - 1
-        internal_at: int | None = None
-        space_at: int | None = None
+        memory: SplitterMemory = SplitterMemory(len(text) - 1)
 
-        while True:
-            character: str = text[cursor]
+        while memory.cursor != -1:
+            memory.character = text[memory.cursor]
+            self._check_character(memory)
 
-            if character in self._terminal:
-                return Sentence(text=text[:cursor + 1], end=cursor + 1)
-
-            elif character in self._internal and internal_at is None:
-                internal_at = cursor
-
-            elif character in self._space and space_at is None:
-                space_at = cursor
-
-            cursor -= 1
-
-            if cursor == -1:
+            if memory.terminal_at is not None:
                 break
 
-        if internal_at:
-            return Sentence(text=text[:internal_at + 1], end=internal_at + 1)
+            memory.cursor -= 1
 
-        elif space_at:
-            return Sentence(text=text[:space_at], end=space_at + 1)
+        return self._process_points(text, memory)
 
-        return Sentence(text=text, end=len(text))
+    def _check_character(self, memory: SplitterMemory) -> None:
+        if memory.character in self._terminal:
+            memory.terminal_at = memory.cursor
+
+        elif memory.character in self._internal and memory.internal_at is None:
+            memory.internal_at = memory.cursor
+
+        elif memory.character in self._space and memory.space_at is None:
+            memory.space_at = memory.cursor
+
+    def _process_points(self, text: str, memory: SplitterMemory) -> Sentence:
+        if memory.terminal_at:
+            text = text[:memory.terminal_at + 1]
+            end: int = memory.terminal_at + 1
+
+        elif memory.internal_at:
+            text = text[:memory.internal_at + 1]
+            end = memory.internal_at + 1
+
+        elif memory.space_at:
+            text = text[:memory.space_at]
+            end = memory.space_at + 1
+
+        else:
+            end = len(text)
+
+        return Sentence(text=text, end=end)
 
 
 class Response(BaseModel):
