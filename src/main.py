@@ -93,7 +93,7 @@ class TextSplitter:
             return Sentence(text=text[:internal_at + 1], end=internal_at + 1)
 
         elif space_at:
-            return Sentence(text=text[:space_at + 1], end=space_at + 1)
+            return Sentence(text=text[:space_at], end=space_at + 1)
 
         return Sentence(text=text, end=len(text))
 
