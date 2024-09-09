@@ -57,7 +57,7 @@ class TextSplitter:
         while True:
             if end > text_length:
                 end = text_length
-                yield self._extract_sentence(text[start: end]).text.strip()
+                yield self._extract_sentence(text[start: end]).text
                 break
 
             chunk_of_text: str = text[start: end]
@@ -65,7 +65,7 @@ class TextSplitter:
             start = start + sentence.end
             end = start + Settings.response_max_length
 
-            yield sentence.text.strip()
+            yield sentence.text
 
     def _extract_sentence(self, text: str) -> Sentence:
         cursor: int = len(text) - 1
