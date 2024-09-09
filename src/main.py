@@ -37,8 +37,6 @@ class Sentence(BaseModel):
 class TextSplitter:
     """Splits text to sentences longer shorter than response_max_length + 1."""
 
-    _max_length: int = 128
-
     _terminal: list[str] = ['.', '!', '?', ';']
     _internal: list[str] = ['-', ':', ',']
     _space: list[str] = ['\n', '\r', '\t', '\f', ' ']
@@ -54,7 +52,7 @@ class TextSplitter:
         """
         text_length: int = len(text)
         start: int = 0
-        end: int = self._max_length
+        end: int = Settings.response_max_length
 
         while True:
             if end > text_length:
@@ -65,7 +63,7 @@ class TextSplitter:
             chunk_of_text: str = text[start: end]
             sentence: Sentence = self._extract_sentence(chunk_of_text)
             start = start + sentence.end
-            end = start + self._max_length
+            end = start + Settings.response_max_length
 
             yield sentence.text.strip()
 
