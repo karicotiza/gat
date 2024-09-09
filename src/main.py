@@ -137,6 +137,8 @@ class Response(BaseModel):
         MaxLen(Settings.response_max_length),
     ]
 
+    done: bool = False
+
 
 class Request(BaseModel):
     """API Request structure."""
@@ -168,12 +170,31 @@ class Request(BaseModel):
             response: Response = Response(text=sentence)
             yield ''.join((response.model_dump_json(), '\n'))
 
+        response = Response(text=' ', done=True)
+        yield ''.join((response.model_dump_json(), '\n'))
+
 
 app: FastAPI = FastAPI()
 splitter: TextSplitter = TextSplitter()
 
 
-@app.post('/')
+@app.post(
+    '/',
+    response_class=StreamingResponse,
+    responses={
+        200: {
+            'description': 'A stream of data',
+            'content': {
+                'application/json': {
+                    'example': {
+                        'text': 'string',
+                        'done': False,
+                    },
+                },
+            },
+        },
+    },
+)
 async def text_split(request: Request) -> StreamingResponse:
     """Text split endpoint.
 

@@ -5,8 +5,7 @@ from httpx import Response
 from schemathesis import experimental, models
 from schemathesis.specs.openapi import loaders, schemas
 
-from main import Response as APIResponse
-from main import app, Settings
+from main import Settings, app
 
 experimental.OPEN_API_3_1.enable()
 
@@ -31,10 +30,8 @@ def _check(before: str, after: str | None = None) -> None:
     if response.status_code != success_code:
         raise ValueError('Failed')
 
-    if after:
-        response_data: APIResponse = APIResponse(**response.json())
-        if response_data.text != after:
-            raise ValueError()
+    if after and str(response.content)[2:-1] != after:
+        raise ValueError()
 
 
 def test_very_long_text() -> None:
@@ -46,22 +43,34 @@ def test_very_long_text() -> None:
 def test_sentence_with_terminal() -> None:
     """Test text with terminal punctuation marks."""
     text_with_terminal: str = 'aaa... a, aa'
-    _check(text_with_terminal, 'aaa...')
+    _check(
+        text_with_terminal,
+        r'{"text":"aaa...","done":false}\n{"text":" ","done":true}\n',
+    )
 
 
 def test_sentence_with_internal() -> None:
     """Test text with internal punctuation marks."""
     text_with_internal: str = 'aaa, a, aa'
-    _check(text_with_internal, 'aaa, a,')
+    _check(
+        text_with_internal,
+        r'{"text":"aaa, a,","done":false}\n{"text":" ","done":true}\n',
+    )
 
 
 def test_sentence_with_spaces() -> None:
     """Test text with spaces only."""
     text_with_spaces: str = 'aaa a aa'
-    _check(text_with_spaces, 'aaa a')
+    _check(
+        text_with_spaces,
+        r'{"text":"aaa a","done":false}\n{"text":" ","done":true}\n',
+    )
 
 
 def test_sentence_without_spaces() -> None:
     """Test text without spaces and any punctuation marks."""
     text_without_spaces: str = 'aaaaa'
-    _check(text_without_spaces, 'aaaaa')
+    _check(
+        text_without_spaces,
+        r'{"text":"aaaaa","done":false}\n{"text":" ","done":true}\n',
+    )
