@@ -5,7 +5,7 @@ from httpx import Response
 from schemathesis import experimental, models
 from schemathesis.specs.openapi import loaders, schemas
 
-from src.main import Settings, app
+from src.main import Settings, app  # type: ignore
 
 experimental.OPEN_API_3_1.enable()
 
