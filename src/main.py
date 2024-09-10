@@ -1,7 +1,7 @@
 """Microservice for dividing text into sentences."""
 
 from dataclasses import dataclass
-from typing import Annotated, Generator
+from typing import Annotated, ClassVar, Generator
 
 from annotated_types import Ge, Le, MaxLen, MinLen
 from fastapi import FastAPI
@@ -9,15 +9,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 
-class Settings:
+class Settings(BaseModel):
     """App settings."""
 
-    request_min_length: int = 1
-    request_max_length: int = 4194304
-    response_min_length: int = 1
-    response_max_length: int = 256
+    request_min_length: ClassVar[int] = 1
+    request_max_length: ClassVar[int] = 4194304
+    response_min_length: ClassVar[int] = 1
+    response_max_length: ClassVar[int] = 256
 
-    media_type: str = 'application/json'
+    media_type: ClassVar[str] = 'application/json'
 
 
 class Sentence(BaseModel):
@@ -128,8 +128,8 @@ class TextSplitter:
         return Sentence(text=text, end=end)
 
 
-class Response(BaseModel):
-    """API Response structure."""
+class ResponseBody(BaseModel):
+    """Response body."""
 
     text: Annotated[
         str,
@@ -140,8 +140,8 @@ class Response(BaseModel):
     done: bool = False
 
 
-class Request(BaseModel):
-    """API Request structure."""
+class RequestBody(BaseModel):
+    """Request body."""
 
     text: Annotated[
         str,
@@ -167,10 +167,10 @@ class Request(BaseModel):
         self, splitter: TextSplitter,
     ) -> Generator[str, None, None]:
         for sentence in splitter.split(self.text):
-            response: Response = Response(text=sentence)
+            response: ResponseBody = ResponseBody(text=sentence)
             yield ''.join((response.model_dump_json(), '\n'))
 
-        response = Response(text=' ', done=True)
+        response = ResponseBody(text=' ', done=True)
         yield ''.join((response.model_dump_json(), '\n'))
 
 
@@ -183,25 +183,43 @@ splitter: TextSplitter = TextSplitter()
     response_class=StreamingResponse,
     responses={
         200: {
-            'description': 'A stream of data',
+            'description': 'Stream of ResponseBody',
             'content': {
                 'application/json': {
-                    'example': {
-                        'text': 'string',
-                        'done': False,
+                    'schema': {
+                        'type': 'array',
+                        'items': ResponseBody.model_json_schema(),
                     },
                 },
             },
         },
     },
+    response_model=ResponseBody,
 )
-async def text_split(request: Request) -> StreamingResponse:
-    """Text split endpoint.
+async def text_split(request: RequestBody) -> StreamingResponse:
+    """# Text split endpoint.
+
+    The endpoint accepts text as input and divides it into segments, no longer
+    than ResponseBody.text max length, but as close as possible.
+
+    This can be useful for processing text in small batches, for example,
+    for synthesizing text in streaming mode.
+
+    Rules for dividing text:
+    1. If one or more complete sentences can fit into this number of max\
+        characters, it places the entire sentence in the segment.
+    2. If the full sentence does not fit into this number of max characters,\
+        then it is divided by internal punctuation marks and the largest part\
+        is placed in the segment.
+    3. If there are no punctuation marks in the text, it is divided by spaces,\
+        and the largest possible part is placed in the segment.
+    4. If there are no spaces in the text, then the text is divided into\
+        segments according to the number of characters.
 
     Args:
-        request (Request): Request structure.
+        request (RequestBody): Request body, details below.
 
     Returns:
-        StreamingResponse: stream of response structure.
+        StreamingResponse: Response body stream, details below.
     """
     return request.response(splitter)
