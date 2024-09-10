@@ -1,8 +1,8 @@
-name: microservice_text_split
+name: microservice
 
 services:
-  app:
-    container_name: microservice_text_split_app
+  text-split:
+    container_name: microservice-text-split
     build: 
       dockerfile: ./build/Dockerfile
       context: .
