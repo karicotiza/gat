@@ -1,9 +1,9 @@
 """FastAPI Tests."""
 
 from fastapi.testclient import TestClient
-from utils_for_tests import check
 
 from src.main import Settings, app
+from tests.utils_for_tests import check
 
 test_client: TestClient = TestClient(app)
 
