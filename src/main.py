@@ -17,7 +17,7 @@ class Settings(BaseModel):
     response_min_length: ClassVar[int] = 1
     response_max_length: ClassVar[int] = 256
 
-    media_type: ClassVar[str] = 'application/json'
+    media_type: ClassVar[str] = 'application/x-ndjson'
 
 
 class Sentence(BaseModel):
@@ -185,7 +185,7 @@ splitter: TextSplitter = TextSplitter()
         200: {
             'description': 'Stream of ResponseBody',
             'content': {
-                'application/json': {
+                'application/x-ndjson': {
                     'schema': {
                         'type': 'array',
                         'items': ResponseBody.model_json_schema(),
