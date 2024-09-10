@@ -20,7 +20,15 @@ def check(client: TestClient, before: str, after: str | None = None) -> None:
     response: Response = client.post('/', json={'text': before})
 
     if response.status_code != success_code:
-        raise ValueError('Failed')
+        wrong_status_code_message: str = ' '.join((
+            str(response.status_code), '!=', str(success_code),
+        ))
+
+        raise ValueError(wrong_status_code_message)
 
     if after and str(response.content)[2:-1] != after:
-        raise ValueError('Failed')
+        not_equal_message: str = ' '.join((
+            str(response.content)[2:-1], '!=', after,
+        ))
+
+        raise ValueError(not_equal_message)
