@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 from typing import Annotated, ClassVar, Generator
 
-from annotated_types import Ge, Le, MaxLen, MinLen
+from annotated_types import Ge, Le
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
 
 class Settings(BaseModel):
@@ -25,8 +25,11 @@ class Sentence(BaseModel):
 
     text: Annotated[
         str,
-        MinLen(Settings.response_min_length),
-        MaxLen(Settings.response_max_length),
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=Settings.response_min_length,
+            max_length=Settings.response_max_length,
+        ),
     ]
     end: Annotated[
         int,
@@ -75,7 +78,7 @@ class TextSplitter:
         while True:
             if end > text_length:
                 end = text_length
-                yield self._extract_sentence(text[start: end]).text
+                yield self._extract_sentence(text[start: end]).text.strip()
                 break
 
             chunk_of_text: str = text[start: end]
@@ -83,7 +86,7 @@ class TextSplitter:
             start = start + sentence.end
             end = start + Settings.response_max_length
 
-            yield sentence.text
+            yield sentence.text.strip()
 
     def _extract_sentence(self, text: str) -> Sentence:
         memory: SplitterMemory = SplitterMemory(len(text) - 1)
@@ -133,8 +136,11 @@ class ResponseBody(BaseModel):
 
     text: Annotated[
         str,
-        MinLen(Settings.response_min_length),
-        MaxLen(Settings.response_max_length),
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=Settings.response_min_length,
+            max_length=Settings.response_max_length,
+        ),
     ]
 
     done: bool = False
@@ -145,8 +151,11 @@ class RequestBody(BaseModel):
 
     text: Annotated[
         str,
-        MinLen(Settings.request_min_length),
-        MaxLen(Settings.request_max_length),
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=Settings.request_min_length,
+            max_length=Settings.request_max_length,
+        ),
     ]
 
     def response(self, splitter: TextSplitter) -> StreamingResponse:
@@ -170,7 +179,7 @@ class RequestBody(BaseModel):
             response: ResponseBody = ResponseBody(text=sentence)
             yield ''.join((response.model_dump_json(), '\n'))
 
-        response = ResponseBody(text=' ', done=True)
+        response = ResponseBody(text='Done', done=True)
         yield ''.join((response.model_dump_json(), '\n'))
 
 

@@ -45,7 +45,7 @@ def test_sentence_with_terminal() -> None:
     text_with_terminal: str = 'aaa... a, aa'
     _check(
         text_with_terminal,
-        r'{"text":"aaa...","done":false}\n{"text":" ","done":true}\n',
+        r'{"text":"aaa...","done":false}\n{"text":"Done","done":true}\n',
     )
 
 
@@ -54,7 +54,7 @@ def test_sentence_with_internal() -> None:
     text_with_internal: str = 'aaa, a, aa'
     _check(
         text_with_internal,
-        r'{"text":"aaa, a,","done":false}\n{"text":" ","done":true}\n',
+        r'{"text":"aaa, a,","done":false}\n{"text":"Done","done":true}\n',
     )
 
 
@@ -63,7 +63,7 @@ def test_sentence_with_spaces() -> None:
     text_with_spaces: str = 'aaa a aa'
     _check(
         text_with_spaces,
-        r'{"text":"aaa a","done":false}\n{"text":" ","done":true}\n',
+        r'{"text":"aaa a","done":false}\n{"text":"Done","done":true}\n',
     )
 
 
@@ -72,5 +72,5 @@ def test_sentence_without_spaces() -> None:
     text_without_spaces: str = 'aaaaa'
     _check(
         text_without_spaces,
-        r'{"text":"aaaaa","done":false}\n{"text":" ","done":true}\n',
+        r'{"text":"aaaaa","done":false}\n{"text":"Done","done":true}\n',
     )
