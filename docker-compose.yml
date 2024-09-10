@@ -3,9 +3,9 @@ name: microservice_text_split
 services:
   app:
     container_name: microservice_text_split_app
-    build:
-      dockerfile: Dockerfile
-      context: './src/'
+    build: 
+      dockerfile: ./build/Dockerfile
+      context: .
     restart: always
     ports:
       - '8000:8000'
