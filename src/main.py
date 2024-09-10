@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from typing import Annotated, ClassVar, Generator
 
-from annotated_types import Ge, Le
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, StringConstraints
@@ -20,22 +19,12 @@ class Settings(BaseModel):
     media_type: ClassVar[str] = 'application/x-ndjson'
 
 
-class Sentence(BaseModel):
+@dataclass(slots=True)
+class Sentence:
     """Sentence structure for TextSplitter."""
 
-    text: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=Settings.response_min_length,
-            max_length=Settings.response_max_length,
-        ),
-    ]
-    end: Annotated[
-        int,
-        Ge(Settings.response_min_length),
-        Le(Settings.response_max_length),
-    ]
+    text: str
+    end: int
 
 
 @dataclass(slots=True)
