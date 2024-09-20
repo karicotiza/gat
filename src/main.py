@@ -1,22 +1,25 @@
 """Microservice for dividing text into sentences."""
 
 from dataclasses import dataclass
-from typing import Annotated, ClassVar, Generator
+from typing import Annotated, Generator
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, StringConstraints
+from pydantic_settings import BaseSettings
 
 
-class Settings(BaseModel):
+class Settings(BaseSettings):
     """App settings."""
 
-    request_min_length: ClassVar[int] = 1
-    request_max_length: ClassVar[int] = 4194304
-    response_min_length: ClassVar[int] = 1
-    response_max_length: ClassVar[int] = 256
+    request_min_length: int = 1
+    request_max_length: int = 4194304
+    response_min_length: int = 1
+    response_max_length: int = 256
+    media_type: str = 'application/x-ndjson'
 
-    media_type: ClassVar[str] = 'application/x-ndjson'
+
+settings: Settings = Settings()
 
 
 @dataclass(slots=True)
@@ -62,7 +65,7 @@ class TextSplitter:
         """
         text_length: int = len(text)
         start: int = 0
-        end: int = Settings.response_max_length
+        end: int = settings.response_max_length
 
         while True:
             if start == text_length:
@@ -71,7 +74,7 @@ class TextSplitter:
             chunk_of_text: str = text[start: end]
             sentence: Sentence = self._extract_sentence(chunk_of_text)
             start = start + sentence.end
-            end = start + Settings.response_max_length
+            end = start + settings.response_max_length
 
             yield sentence.text.strip()
 
@@ -125,8 +128,8 @@ class ResponseBody(BaseModel):
         str,
         StringConstraints(
             strip_whitespace=True,
-            min_length=Settings.response_min_length,
-            max_length=Settings.response_max_length,
+            min_length=settings.response_min_length,
+            max_length=settings.response_max_length,
         ),
     ]
 
@@ -140,8 +143,8 @@ class RequestBody(BaseModel):
         str,
         StringConstraints(
             strip_whitespace=True,
-            min_length=Settings.request_min_length,
-            max_length=Settings.request_max_length,
+            min_length=settings.request_min_length,
+            max_length=settings.request_max_length,
         ),
     ]
 
@@ -156,7 +159,7 @@ class RequestBody(BaseModel):
         """
         return StreamingResponse(
             self._split_sentences(splitter),
-            media_type=Settings.media_type,
+            media_type=settings.media_type,
         )
 
     def _split_sentences(
