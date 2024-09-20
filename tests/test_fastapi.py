@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from src.main import Settings, app
+from src.main import app, settings
 from tests.utils_for_tests import check
 
 test_client: TestClient = TestClient(app)
@@ -11,7 +11,7 @@ done_true: str = r'{"text":"Done","done":true}\n'
 
 def test_very_long_text() -> None:
     """Test very long text."""
-    very_long_text: str = 'a' * (Settings.request_max_length - 1)
+    very_long_text: str = 'a' * (settings.request_max_length - 1)
     check(test_client, very_long_text)
 
 
