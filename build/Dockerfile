@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN python -m pip install fastapi==0.112.2
 RUN python -m pip install uvicorn==0.30.6
+RUN python -m pip install pydantic-settings==2.5.2
 
 COPY ./src/main.py main.py
 
