@@ -1,6 +1,5 @@
-"""Microservice for dividing text into sentences."""
+"""Text split microservice."""
 
-from dataclasses import dataclass
 from typing import Annotated, Generator
 
 from fastapi import FastAPI
@@ -16,25 +15,46 @@ class Settings(BaseSettings):
     request_max_length: int = 4194304
     response_min_length: int = 1
     response_max_length: int = 256
+
     media_type: str = 'application/x-ndjson'
 
 
 settings: Settings = Settings()
 
 
-@dataclass(slots=True)
-class Sentence:
+class RequestBody(BaseModel):
+    """Request body."""
+
+    text: Annotated[str, StringConstraints(
+        strip_whitespace=True,
+        min_length=settings.request_min_length,
+        max_length=settings.request_max_length,
+    )]
+
+
+class ResponseBody(BaseModel):
+    """Response body."""
+
+    text: Annotated[str, StringConstraints(
+        strip_whitespace=True,
+        min_length=settings.response_min_length,
+        max_length=settings.response_max_length,
+    )]
+
+    done: bool = False
+
+
+class Sentence(BaseModel):
     """Sentence structure for TextSplitter."""
 
     text: str
     end: int
 
 
-@dataclass(slots=True)
-class SplitterMemory:
+class Cursor(BaseModel):
     """Splitter memory structure."""
 
-    cursor: int
+    index: int
 
     terminal_at: int | None = None
     internal_at: int | None = None
@@ -47,7 +67,7 @@ class SplitterMemory:
     character: str = ''
 
 
-class TextSplitter:
+class Service:
     """Splits text to sentences longer shorter than response_max_length + 1."""
 
     _terminal: list[str] = ['.', '!', '?', ';']
@@ -69,6 +89,7 @@ class TextSplitter:
 
         while True:
             if start == text_length:
+                yield self._string_to_stream_response()
                 break
 
             chunk_of_text: str = text[start: end]
@@ -76,33 +97,33 @@ class TextSplitter:
             start = start + sentence.end
             end = start + settings.response_max_length
 
-            yield sentence.text.strip()
+            yield self._string_to_stream_response(sentence.text.strip())
 
     def _extract_sentence(self, text: str) -> Sentence:
-        memory: SplitterMemory = SplitterMemory(len(text) - 1)
+        memory: Cursor = Cursor(index=(len(text) - 1))
 
-        while memory.cursor != -1:
-            memory.character = text[memory.cursor]
+        while memory.index != -1:
+            memory.character = text[memory.index]
             self._check_character(memory)
 
             if memory.terminal_at is not None:
                 break
 
-            memory.cursor -= 1
+            memory.index -= 1
 
         return self._process_points(text, memory)
 
-    def _check_character(self, memory: SplitterMemory) -> None:
+    def _check_character(self, memory: Cursor) -> None:
         if memory.character in self._terminal:
-            memory.terminal_at = memory.cursor
+            memory.terminal_at = memory.index
 
         elif memory.character in self._internal and memory.internal_at is None:
-            memory.internal_at = memory.cursor
+            memory.internal_at = memory.index
 
         elif memory.character in self._space and memory.space_at is None:
-            memory.space_at = memory.cursor
+            memory.space_at = memory.index
 
-    def _process_points(self, text: str, memory: SplitterMemory) -> Sentence:
+    def _process_points(self, text: str, memory: Cursor) -> Sentence:
         if memory.terminal_at:
             text = text[:memory.terminal_at + 1]
             end: int = memory.terminal_at + 1
@@ -120,61 +141,25 @@ class TextSplitter:
 
         return Sentence(text=text, end=end)
 
-
-class ResponseBody(BaseModel):
-    """Response body."""
-
-    text: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=settings.response_min_length,
-            max_length=settings.response_max_length,
-        ),
-    ]
-
-    done: bool = False
-
-
-class RequestBody(BaseModel):
-    """Request body."""
-
-    text: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=settings.request_min_length,
-            max_length=settings.request_max_length,
-        ),
-    ]
-
-    def response(self, splitter: TextSplitter) -> StreamingResponse:
-        """Get response, as stream.
+    def _string_to_stream_response(self, sentence: str = '') -> str:
+        """Format strings to be sent using streaming.
 
         Args:
-            splitter (TextSplitter): text splitter.
+            sentence (str): sentence.
 
         Returns:
-            StreamingResponse: stream of data
+            str: Stream ready sentence.
         """
-        return StreamingResponse(
-            self._split_sentences(splitter),
-            media_type=settings.media_type,
-        )
-
-    def _split_sentences(
-        self, splitter: TextSplitter,
-    ) -> Generator[str, None, None]:
-        for sentence in splitter.split(self.text):
+        if sentence:
             response: ResponseBody = ResponseBody(text=sentence)
-            yield ''.join((response.model_dump_json(), '\n'))
+            return ''.join((response.model_dump_json(), '\n'))
 
         response = ResponseBody(text='Done', done=True)
-        yield ''.join((response.model_dump_json(), '\n'))
+        return ''.join((response.model_dump_json(), '\n'))
 
 
+service: Service = Service()
 app: FastAPI = FastAPI()
-splitter: TextSplitter = TextSplitter()
 
 
 @app.post(
@@ -221,4 +206,5 @@ async def text_split(request: RequestBody) -> StreamingResponse:
     Returns:
         StreamingResponse: Response body stream, details below.
     """
-    return request.response(splitter)
+    stream: Generator[str, None, None] = service.split(request.text)
+    return StreamingResponse(stream, media_type=settings.media_type)
