@@ -18,6 +18,10 @@ class Settings(BaseSettings):
 
     media_type: str = 'application/x-ndjson'
 
+    terminal: list[str] = ['.', '!', '?', ';']
+    internal: list[str] = ['-', ':', ',']
+    space: list[str] = ['\n', '\r', '\t', '\f', ' ']
+
 
 settings: Settings = Settings()
 
@@ -64,15 +68,11 @@ class Cursor(BaseModel):
     is_internal: bool = False
     is_space: bool = False
 
-    character: str = ''
+    letter: str = ''
 
 
 class Service:
     """Splits text to sentences longer shorter than response_max_length + 1."""
-
-    _terminal: list[str] = ['.', '!', '?', ';']
-    _internal: list[str] = ['-', ':', ',']
-    _space: list[str] = ['\n', '\r', '\t', '\f', ' ']
 
     def split(self, text: str) -> Generator[str, None, None]:
         """Split long text to sentences shorter response_max_length + 1.
@@ -103,8 +103,8 @@ class Service:
         memory: Cursor = Cursor(index=(len(text) - 1))
 
         while memory.index != -1:
-            memory.character = text[memory.index]
-            self._check_character(memory)
+            memory.letter = text[memory.index]
+            self._check_letter(memory)
 
             if memory.terminal_at is not None:
                 break
@@ -113,14 +113,14 @@ class Service:
 
         return self._process_points(text, memory)
 
-    def _check_character(self, memory: Cursor) -> None:
-        if memory.character in self._terminal:
+    def _check_letter(self, memory: Cursor) -> None:
+        if memory.letter in settings.terminal:
             memory.terminal_at = memory.index
 
-        elif memory.character in self._internal and memory.internal_at is None:
+        elif memory.letter in settings.internal and memory.internal_at is None:
             memory.internal_at = memory.index
 
-        elif memory.character in self._space and memory.space_at is None:
+        elif memory.letter in settings.space and memory.space_at is None:
             memory.space_at = memory.index
 
     def _process_points(self, text: str, memory: Cursor) -> Sentence:
